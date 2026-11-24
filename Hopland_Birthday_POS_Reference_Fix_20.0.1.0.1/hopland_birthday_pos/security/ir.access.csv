@@ -1,0 +1,12 @@
+id,name,model_id,group_id/id,operation,domain
+birthday_package_user,Birthday package read,hopland.birthday.package,point_of_sale.group_pos_user,r,
+birthday_package_manager,Birthday package setup,hopland.birthday.package,point_of_sale.group_pos_manager,crud,
+birthday_package_company,Birthday package company,hopland.birthday.package,,crud,"[('company_id', 'in', company_ids)]"
+birthday_service_user,Birthday service read,hopland.birthday.service,point_of_sale.group_pos_user,r,
+birthday_service_manager,Birthday service setup,hopland.birthday.service,point_of_sale.group_pos_manager,crud,
+birthday_service_company,Birthday service company,hopland.birthday.service,,crud,"[('company_id', 'in', company_ids)]"
+birthday_room_user,Birthday room read,hopland.birthday.room,point_of_sale.group_pos_user,r,
+birthday_room_manager,Birthday room setup,hopland.birthday.room,point_of_sale.group_pos_manager,crud,
+birthday_room_company,Birthday room company,hopland.birthday.room,,crud,"[('company_id', 'in', company_ids)]"
+birthday_booking_user,Birthday booking read,hopland.birthday.booking,point_of_sale.group_pos_user,r,
+birthday_booking_company,Birthday booking company,hopland.birthday.booking,,crud,"[('company_id', 'in', company_ids)]"

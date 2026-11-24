@@ -1,0 +1,33 @@
+id,name,model_id,group_id/id,operation,domain
+birthday_package_user,Birthday package read,hopland.birthday.package,point_of_sale.group_pos_user,r,
+birthday_package_manager,Birthday package setup,hopland.birthday.package,point_of_sale.group_pos_manager,crud,
+birthday_package_company,Birthday package company,hopland.birthday.package,,crud,"[('company_id', 'in', company_ids)]"
+birthday_service_user,Birthday service read,hopland.birthday.service,point_of_sale.group_pos_user,r,
+birthday_service_manager,Birthday service setup,hopland.birthday.service,point_of_sale.group_pos_manager,crud,
+birthday_service_company,Birthday service company,hopland.birthday.service,,crud,"[('company_id', 'in', company_ids)]"
+birthday_room_user,Birthday room read,hopland.birthday.room,point_of_sale.group_pos_user,r,
+birthday_room_manager,Birthday room setup,hopland.birthday.room,point_of_sale.group_pos_manager,crud,
+birthday_room_company,Birthday room company,hopland.birthday.room,,crud,"[('company_id', 'in', company_ids)]"
+birthday_booking_user,Birthday booking read,hopland.birthday.booking,point_of_sale.group_pos_user,r,
+birthday_booking_company,Birthday booking company,hopland.birthday.booking,,crud,"[('company_id', 'in', company_ids)]"
+department_sales_booking,Party sales booking,hopland.birthday.booking,sales_team.group_sale_salesman,r,
+department_sales_package,Party sales package,hopland.birthday.package,sales_team.group_sale_salesman,r,
+department_sales_room,Party sales room,hopland.birthday.room,sales_team.group_sale_salesman,r,
+department_sales_service,Party sales service,hopland.birthday.service,sales_team.group_sale_salesman,r,
+department_sales_register,Party sales register,pos.config,sales_team.group_sale_salesman,r,
+department_sales_preparation,Party sales preparation,hopland.party.preparation,sales_team.group_sale_salesman,r,
+department_accounting_booking,Party accounting booking,hopland.birthday.booking,account.group_account_user,r,
+department_accounting_package,Party accounting package,hopland.birthday.package,account.group_account_user,r,
+department_accounting_room,Party accounting room,hopland.birthday.room,account.group_account_user,r,
+department_accounting_service,Party accounting service,hopland.birthday.service,account.group_account_user,r,
+department_accounting_register,Party accounting register,pos.config,account.group_account_user,r,
+department_accounting_preparation,Party accounting preparation,hopland.party.preparation,account.group_account_user,r,
+department_purchase_booking,Party purchase booking,hopland.birthday.booking,purchase.group_purchase_user,r,
+department_purchase_package,Party purchase package,hopland.birthday.package,purchase.group_purchase_user,r,
+department_purchase_room,Party purchase room,hopland.birthday.room,purchase.group_purchase_user,r,
+department_purchase_service,Party purchase service,hopland.birthday.service,purchase.group_purchase_user,r,
+department_purchase_register,Party purchase register,pos.config,purchase.group_purchase_user,r,
+department_purchase_preparation,Party purchase preparation,hopland.party.preparation,purchase.group_purchase_user,ru,
+party_sales_wizard,Sales party wizard,hopland.party.sales.wizard,sales_team.group_sale_salesman,crud,
+party_preparation_company,Preparation company,hopland.party.preparation,,crud,"[('company_id', 'in', company_ids)]"
+party_preparation_pos,Reception preparation read,hopland.party.preparation,point_of_sale.group_pos_user,r,

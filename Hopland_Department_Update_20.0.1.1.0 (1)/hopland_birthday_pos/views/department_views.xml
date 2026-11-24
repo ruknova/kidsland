@@ -1,0 +1,123 @@
+<odoo>
+    <record id="party_sales_wizard_form" model="ir.ui.view">
+        <field name="name">hopland.party.sales.wizard.form</field>
+        <field name="model">hopland.party.sales.wizard</field>
+        <field name="arch" type="xml">
+            <form string="New party reservation">
+                <field name="request_uuid" invisible="1"/>
+                <field name="quoted" invisible="1"/>
+                <field name="currency_id" invisible="1"/>
+                <field name="allowed_extra_ids" invisible="1"/>
+                <div class="alert alert-info">Save a tentative reservation for Reception. The party is confirmed only after the required payment is validated in POS.</div>
+                <group>
+                    <group string="Branch and package">
+                        <field name="company_id" options="{'no_create': True}"/>
+                        <field name="config_id" domain="[('company_id', '=', company_id), ('hopland_birthday_enabled', '=', True)]" options="{'no_create': True}"/>
+                        <field name="package_id" domain="[('company_id', '=', company_id)]" options="{'no_create': True}"/>
+                        <field name="event_kind"/>
+                        <field name="room_id" domain="[('company_id', '=', company_id)]" options="{'no_create': True}"/>
+                        <field name="start"/><field name="stop"/><field name="booking_timezone"/>
+                        <div class="text-muted" colspan="2">Date fields use your Odoo user timezone. End time follows the package duration.</div>
+                    </group>
+                    <group string="Customer and guests">
+                        <field name="partner_id" domain="['|', ('company_id', '=', False), ('company_id', 'parent_of', company_id)]" options="{'no_create': True}"/>
+                        <field name="parent_name" invisible="partner_id" required="not partner_id"/>
+                        <field name="phone"/><field name="email"/>
+                        <field name="child_name"/>
+                        <field name="child_age" invisible="event_kind != 'birthday'"/>
+                        <field name="children"/><field name="adults"/>
+                    </group>
+                </group>
+                <group>
+                    <group string="Make it their party">
+                        <field name="service_ids" widget="many2many_tags" domain="[('package_id', '=', package_id)]" options="{'no_create': True}"/>
+                        <field name="extra_ids" widget="many2many_tags" domain="[('id', 'in', allowed_extra_ids)]" options="{'no_create': True}"/>
+                        <field name="notes"/>
+                    </group>
+                    <group string="Price summary">
+                        <field name="discount"/>
+                        <field name="amount_total"/><field name="minimum_deposit"/>
+                        <div class="text-muted" colspan="2">Calculate price after choosing the package, guests and extras. Availability is checked when you save.</div>
+                    </group>
+                </group>
+                <footer>
+                    <button name="action_quote" type="object" string="Calculate price" class="btn-secondary"/>
+                    <button name="action_reserve" type="object" string="Save and send to Reception" class="btn-primary" invisible="not quoted"/>
+                    <button string="Discard" special="cancel" class="btn-secondary"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+    <record id="party_sales_wizard_action" model="ir.actions.act_window">
+        <field name="name">New party reservation</field><field name="res_model">hopland.party.sales.wizard</field>
+        <field name="view_mode">form</field><field name="target">new</field>
+        <field name="context">{'tz': 'Asia/Riyadh'}</field>
+    </record>
+    <record id="party_department_booking_form" model="ir.ui.view">
+        <field name="name">hopland.birthday.booking.departments.form</field>
+        <field name="model">hopland.birthday.booking</field>
+        <field name="inherit_id" ref="birthday_booking_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='company_id']" position="after">
+                <field name="event_kind"/><field name="source"/><field name="salesperson_id"/>
+            </xpath>
+            <xpath expr="//field[@name='sale_order_id']" position="attributes">
+                <attribute name="groups">sales_team.group_sale_salesman,point_of_sale.group_pos_user,account.group_account_user</attribute>
+            </xpath>
+            <xpath expr="//sheet" position="inside">
+                <group string="Party preparation">
+                    <field name="preparation_ids" nolabel="1">
+                        <list create="false" edit="false" delete="false">
+                            <field name="name"/><field name="state" widget="badge"/><field name="on_hold"/><field name="preparation_notes"/>
+                        </list>
+                    </field>
+                </group>
+            </xpath>
+        </field>
+    </record>
+    <record id="party_department_booking_list" model="ir.ui.view">
+        <field name="name">hopland.birthday.booking.departments.list</field><field name="model">hopland.birthday.booking</field>
+        <field name="inherit_id" ref="birthday_booking_list"/>
+        <field name="arch" type="xml"><xpath expr="//field[@name='name']" position="after"><field name="company_id"/><field name="event_kind" optional="show"/><field name="source" optional="show"/></xpath></field>
+    </record>
+    <record id="party_preparation_list" model="ir.ui.view">
+        <field name="name">hopland.party.preparation.list</field><field name="model">hopland.party.preparation</field>
+        <field name="arch" type="xml"><list create="false" delete="false" decoration-warning="on_hold" decoration-success="state == 'ready'"><field name="name"/><field name="company_id"/><field name="child_name"/><field name="start"/><field name="state" widget="badge"/><field name="on_hold"/><field name="activity_ids" widget="list_activity"/></list></field>
+    </record>
+    <record id="party_preparation_form" model="ir.ui.view">
+        <field name="name">hopland.party.preparation.form</field><field name="model">hopland.party.preparation</field>
+        <field name="arch" type="xml">
+            <form create="false" delete="false">
+                <header><button name="action_new_rfq" type="object" string="New RFQ for missing items" groups="purchase.group_purchase_user" invisible="on_hold" class="btn-primary"/></header>
+                <sheet>
+                    <div class="alert alert-warning" invisible="not on_hold">Preparation is on hold: the reservation no longer meets its deposit requirement. Review before committing purchases.</div>
+                    <div class="oe_title"><h1><field name="name"/></h1><h2><field name="child_name"/></h2></div>
+                    <group><group><field name="booking_id"/><field name="company_id"/><field name="event_kind"/><field name="room_id"/><field name="start"/><field name="stop"/><field name="timezone"/></group>
+                    <group><field name="children"/><field name="adults"/><field name="on_hold"/>
+                        <field name="state" groups="purchase.group_purchase_user" readonly="on_hold"/>
+                        <field name="state" groups="!purchase.group_purchase_user" readonly="1"/>
+                    </group></group>
+                    <group><field name="included_services"/><field name="extras"/><field name="notes"/>
+                        <field name="preparation_notes" groups="purchase.group_purchase_user"/>
+                        <field name="preparation_notes" groups="!purchase.group_purchase_user" readonly="1"/>
+                    </group>
+                    <group string="Purchasing" groups="purchase.group_purchase_user">
+                        <p>Check available stock first. Choose the supplier, products, quantities and delivery details in the RFQ. No purchase is generated automatically.</p>
+                        <field name="purchase_ids" readonly="1" nolabel="1"><list create="false" edit="false" delete="false"><field name="name"/><field name="partner_id"/><field name="state"/><field name="amount_total"/></list></field>
+                    </group>
+                </sheet><chatter/>
+            </form>
+        </field>
+    </record>
+    <record id="party_preparations_action" model="ir.actions.act_window"><field name="name">Party preparation</field><field name="res_model">hopland.party.preparation</field><field name="view_mode">list,form</field></record>
+    <record id="party_purchase_link_form" model="ir.ui.view">
+        <field name="name">purchase.order.party.link</field><field name="model">purchase.order</field><field name="inherit_id" ref="purchase.purchase_order_form"/>
+        <field name="arch" type="xml"><xpath expr="//field[@name='partner_id']" position="after"><field name="hopland_booking_id" domain="[('company_id', '=', company_id), ('state', 'in', ['confirmed', 'completed'])]" options="{'no_create': True}" readonly="state not in ['draft', 'sent']"/></xpath></field>
+    </record>
+    <menuitem id="party_sales_root" name="Parties" parent="sale.sale_menu_root" sequence="15" groups="sales_team.group_sale_salesman"/>
+    <menuitem id="party_sales_new" name="New reservation" parent="party_sales_root" action="party_sales_wizard_action" sequence="10"/>
+    <menuitem id="party_sales_bookings" name="Reservations and calendar" parent="party_sales_root" action="birthday_bookings_action" sequence="20"/>
+    <menuitem id="party_sales_preparation" name="Preparation progress" parent="party_sales_root" action="party_preparations_action" sequence="30"/>
+    <menuitem id="party_purchasing_menu" name="Party preparation" parent="purchase.menu_purchase_root" action="party_preparations_action" sequence="15" groups="purchase.group_purchase_user"/>
+    <menuitem id="party_accounting_menu" name="Party reservations" parent="account.menu_finance" action="birthday_bookings_action" sequence="35" groups="account.group_account_user"/>
+</odoo>

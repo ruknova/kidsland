@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+    <t t-name="hopland_birthday_pos.Navbar" t-inherit="point_of_sale.Navbar" t-inherit-mode="extension">
+        <xpath expr="//div[hasclass('navbar-menu')]" position="after">
+            <button t-if="this.pos.config.hopland_birthday_enabled" class="btn hopland-launch btn-lg" t-on-click="this.openBirthdayReservations" title="Birthday reservations">
+                <span aria-hidden="true">✦</span> <span>Birthdays</span>
+            </button>
+        </xpath>
+    </t>
+    <t t-name="hopland_birthday_pos.BirthdayDialog">
+        <Dialog title="'Birthday reservations'" size="'xl'" footer="false" contentClass="'hopland-dialog'" bodyClass="'p-0'">
+            <div class="hb-app">
+                <header class="hb-top">
+                    <div><div class="hb-eyebrow">HOPLAND · MAKE THEIR DAY</div><h2>A little planning. A big celebration.</h2><p><t t-out="this.state.catalog.branch"/> · Times in <t t-out="this.state.catalog.timezone"/></p></div>
+                    <nav class="hb-tabs" aria-label="Birthday workflow">
+                        <button t-att-class="{'active': this.state.tab === 'new'}" t-att-disabled="this.state.busy" t-on-click="this.newBooking">New reservation</button>
+                        <button t-att-class="{'active': this.state.tab === 'bookings'}" t-att-disabled="this.state.busy" t-on-click="this.showBookings">Bookings &amp; balances</button>
+                    </nav>
+                </header>
+                <div t-if="this.state.error" class="hb-alert" role="alert" t-out="this.state.error"/>
+                <div t-if="this.state.loading" class="hb-empty" role="status">Preparing your party packages…</div>
+                <t t-elif="this.state.tab === 'new' and this.selectedPackage">
+                    <fieldset t-att-disabled="this.state.busy or !!this.state.saved" class="hb-main">
+                        <div class="hb-details">
+                            <section class="hb-panel">
+                                <h3><span class="hb-step">1</span> Choose a package</h3>
+                                <div class="hb-packages">
+                                    <button t-foreach="this.state.catalog.packages" t-as="p" t-key="p.id" class="hb-package" t-att-class="{'selected': p.id === this.selectedPackage.id}" t-on-click="() => this.choosePackage(p.id)">
+                                        <img t-att-src="this.image(p.template_id)" alt="Birthday package"/>
+                                        <div><strong t-out="p.name"/><small><t t-out="p.duration"/> hours · Minimum <t t-out="p.min_children"/> children</small></div><span class="hb-tick" t-if="p.id === this.selectedPackage.id">✓</span>
+                                    </button>
+                                </div>
+                            </section>
+                            <section class="hb-panel">
+                                <h3><span class="hb-step">2</span> Who are we celebrating?</h3>
+                                <div class="hb-grid">
+                                    <label class="hb-wide">Parent name or phone <span>*</span><div class="hb-inline"><input type="text" autocomplete="off" placeholder="Find a customer or enter a new name" t-att-value="this.state.parent" t-att-readonly="!!this.state.partnerId" t-on-input="(e) => this.input('parent', e)"/><button t-if="this.state.partnerId" t-on-click="this.changeCustomer">Change</button></div></label>
+                                    <div t-if="this.state.customers.length" class="hb-matches hb-wide">
+                                        <button t-foreach="this.state.customers" t-as="customer" t-key="customer.id" t-on-click="() => this.selectCustomer(customer)"><strong t-out="customer.name"/><span t-out="customer.phone"/></button>
+                                    </div>
+                                    <small class="hb-wide hb-muted" t-if="!this.state.partnerId">Select a match above, or enter a new parent's name and phone.</small>
+                                    <label>Phone <span>*</span><input type="tel" placeholder="05X XXX XXXX" t-att-value="this.state.phone" t-on-input="(e) => this.input('phone', e)"/></label>
+                                    <label>Email <small>optional</small><input type="email" placeholder="parent@example.com" t-att-value="this.state.email" t-on-input="(e) => this.input('email', e)"/></label>
+                                    <label>Birthday child's name <span>*</span><input type="text" placeholder="Child's first name" t-att-value="this.state.child" t-on-input="(e) => this.input('child', e)"/></label>
+                                    <label>Turning age<input type="number" min="0" max="18" t-att-value="this.state.age" t-on-input="(e) => this.input('age', e)"/></label>
+                                    <label>Children <span>*</span><input type="number" t-att-min="this.selectedPackage.min_children" t-att-max="this.selectedPackage.max_children" t-att-value="this.state.children" t-on-input="(e) => this.input('children', e, true)"/></label>
+                                    <label>Accompanying adults<input type="number" min="0" max="100" t-att-value="this.state.adults" t-on-input="(e) => this.input('adults', e)"/></label>
+                                </div>
+                            </section>
+                            <section class="hb-panel">
+                                <h3><span class="hb-step">3</span> Pick their party time</h3>
+                                <div class="hb-grid">
+                                    <label class="hb-wide">Party room <span>*</span><select t-att-value="this.state.roomId" t-on-change="(e) => this.input('roomId', e)"><option value="0">Select a room</option><option t-foreach="this.state.catalog.rooms" t-as="room" t-key="room.id" t-att-value="room.id" t-att-selected="room.id === (+this.state.roomId)"><t t-out="room.name"/> · up to <t t-out="room.capacity"/> children</option></select></label>
+                                    <label>Party start <span>*</span><input type="datetime-local" t-att-value="this.state.start" t-on-input="(e) => this.input('start', e)"/></label>
+                                    <label>Party end<input type="datetime-local" t-att-value="this.state.stop" readonly="readonly"/></label>
+                                </div>
+                                <p class="hb-hint">Availability is checked when you reserve. Tentative bookings hold the room until cancelled.</p>
+                            </section>
+                        </div>
+                        <div class="hb-services">
+                            <section class="hb-panel">
+                                <h3><span class="hb-step">4</span> Make it their party</h3>
+                                <div class="hb-section-heading"><strong>Included in your package</strong><span class="hb-pill">Included</span></div>
+                                <label t-foreach="this.selectedPackage.services" t-as="service" t-key="service.id" class="hb-check">
+                                    <input type="checkbox" t-att-checked="this.state.services[service.id]" t-on-change="(e) => this.toggleService(service.id, e)"/><span t-out="service.name"/>
+                                </label>
+                                <p class="hb-hint">Uncheck anything the parent does not need. Package price stays the same.</p>
+                                <div class="hb-section-heading hb-extra-heading"><strong>A little extra magic</strong><span class="hb-pill hb-yellow">Optional</span></div>
+                                <label t-foreach="this.selectedPackage.extras" t-as="extra" t-key="extra.id" class="hb-extra" t-att-class="{'selected': this.state.extras[extra.id]}">
+                                    <input type="checkbox" t-att-checked="this.state.extras[extra.id]" t-on-change="(e) => this.toggleExtra(extra.id, e)"/>
+                                    <img t-att-src="this.image(extra.template_id)" alt="Optional birthday service"/>
+                                    <div><strong t-out="extra.name"/><small>Once per booking</small></div>
+                                    <b t-if="this.state.optionPrices[extra.id] !== undefined" t-out="this.money(this.state.optionPrices[extra.id])"/>
+                                </label>
+                                <label class="hb-notes">Special requests<textarea rows="3" placeholder="Cake message, meal preference, theme, accessibility requests…" t-model.proxy="this.state.notes"/></label>
+                            </section>
+                        </div>
+                        <aside class="hb-summary">
+                            <div class="hb-summary-inner">
+                                <div class="hb-eyebrow">YOUR CELEBRATION</div><h3>Reservation summary</h3>
+                                <div t-if="this.state.pricing" class="hb-hint" role="status">Updating price…</div>
+                                <div t-if="this.state.priceError" class="hb-alert" t-out="this.state.priceError"/>
+                                <t t-if="this.state.quote">
+                                    <div class="hb-summary-line" t-foreach="this.state.quote.lines" t-as="line" t-key="line.product_id"><span><t t-out="line.qty"/> × <t t-out="line.name"/></span><strong t-out="this.money(line.total)"/></div>
+                                    <label class="hb-discount">Package discount %<input type="number" min="0" t-att-max="this.selectedPackage.max_discount" t-att-value="this.state.discount" t-on-input="(e) => this.input('discount', e, true)"/></label>
+                                    <small class="hb-muted">Applies to the children's package only. Maximum <t t-out="this.selectedPackage.max_discount"/>%.</small>
+                                    <div class="hb-total"><span>Total</span><strong t-out="this.money(this.state.quote.total)"/></div>
+                                    <p class="hb-tax">Includes <t t-out="this.money(this.state.quote.tax)"/> tax</p>
+                                    <h4>How would they like to pay?</h4>
+                                    <label class="hb-pay-option"><input type="radio" name="hb-pay-mode" value="deposit" t-att-checked="this.state.payMode === 'deposit'" t-on-change="() => this.state.payMode = 'deposit'"/><span><t t-out="this.selectedPackage.deposit_percent"/>% deposit</span><b t-out="this.money(this.state.quote.minimum_deposit)"/></label>
+                                    <label class="hb-pay-option"><input type="radio" name="hb-pay-mode" value="full" t-att-checked="this.state.payMode === 'full'" t-on-change="() => this.state.payMode = 'full'"/><span>Pay in full</span></label>
+                                    <label class="hb-pay-option"><input type="radio" name="hb-pay-mode" value="custom" t-att-checked="this.state.payMode === 'custom'" t-on-change="() => this.state.payMode = 'custom'"/><span>Custom deposit</span></label>
+                                    <label t-if="this.state.payMode === 'custom'">Deposit amount<input type="number" step="0.01" t-att-min="this.state.quote.minimum_deposit" t-att-max="this.state.quote.total" t-att-value="this.state.customDeposit" t-on-input="(e) => this.input('customDeposit', e)"/></label>
+                                    <div class="hb-due"><span>Pay now</span><strong t-out="this.money(this.payable)"/></div>
+                                    <div class="hb-summary-line hb-muted"><span>Remaining after payment</span><strong t-out="this.money((this.state.quote.total > this.payable ? this.state.quote.total - this.payable : 0))"/></div>
+                                </t>
+                                <button class="hb-primary" t-att-disabled="this.state.busy or this.state.pricing or !this.state.quote" t-on-click="() => this.submit(true)"><t t-if="this.state.busy">Preparing reservation…</t><t t-else="">Reserve &amp; take payment →</t></button>
+                                <button class="hb-secondary" t-att-disabled="this.state.busy or this.state.pricing or !this.state.quote" t-on-click="() => this.submit(false)">Save tentative reservation</button>
+                                <p class="hb-hint">The booking confirms after the required payment is validated in POS.</p>
+                                <details><summary>Package terms</summary><p t-out="this.selectedPackage.terms"/></details>
+                            </div>
+                        </aside>
+                    </fieldset>
+                    <div t-if="this.state.saved" class="hb-saved">Reservation <b t-out="this.state.saved.reference"/> is saved. <button t-on-click="this.showBookings">Open Bookings to continue payment</button></div>
+                </t>
+                <section t-elif="this.state.tab === 'bookings'" class="hb-bookings">
+                    <div class="hb-list-heading"><div><h3>Every celebration, in one place.</h3><p>Search the latest 50 reservations for this register. Calendar and full history are available in the backend.</p></div><div class="hb-inline"><input placeholder="Name, phone or reference" aria-label="Search reservations" t-att-value="this.state.query" t-on-input="(e) => this.input('query', e)"/><button t-on-click="this.showBookings" t-att-disabled="this.state.busy">Search</button></div></div>
+                    <div t-if="!this.state.bookings.length" class="hb-empty">No reservations found.</div>
+                    <article t-foreach="this.state.bookings" t-as="booking" t-key="booking.id" class="hb-booking-card">
+                        <div><span class="hb-pill" t-att-class="{'hb-yellow': booking.state === 'tentative'}" t-out="booking.state"/><h3><t t-out="booking.child"/>'s birthday</h3><p><t t-out="booking.reference"/> · <t t-out="booking.parent"/> · <t t-out="booking.phone"/></p><p><t t-out="this.dateLabel(booking.start, booking.timezone)"/> · <t t-out="booking.room"/> · <t t-out="booking.children"/> children</p></div>
+                        <div class="hb-booking-money"><small>Total <b t-out="this.money(booking.total)"/></small><small>Received <b t-out="this.money(booking.paid)"/></small><strong>Balance <t t-out="this.money(booking.balance)"/></strong></div>
+                        <div class="hb-booking-actions" t-if="!['cancelled', 'completed'].includes(booking.state) and booking.balance &gt; 0">
+                            <button class="hb-primary" t-if="booking.checkout_uuid" t-att-disabled="this.state.busy" t-on-click="() => this.collect(booking, booking.checkout_mode || 'deposit')">Resume payment</button>
+                            <t t-else="">
+                                <button class="hb-primary" t-if="booking.paid &lt; booking.minimum_deposit and booking.minimum_deposit &lt; booking.total" t-att-disabled="this.state.busy" t-on-click="() => this.collect(booking, 'deposit')">Collect deposit</button>
+                                <button class="hb-secondary" t-att-disabled="this.state.busy" t-on-click="() => this.collect(booking, 'full')">Pay remaining balance</button>
+                                <button class="hb-link" t-if="booking.state === 'tentative' and booking.paid === 0" t-att-disabled="this.state.busy" t-on-click="() => this.cancel(booking)">Cancel tentative booking</button>
+                            </t>
+                        </div>
+                        <span t-elif="booking.balance === 0" class="hb-pill">Fully paid</span>
+                    </article>
+                </section>
+            </div>
+        </Dialog>
+    </t>
+</templates>

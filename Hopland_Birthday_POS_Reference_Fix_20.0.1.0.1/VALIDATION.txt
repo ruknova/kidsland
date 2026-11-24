@@ -1,0 +1,28 @@
+Hopland Birthday POS reference fix — 20.0.1.0.1
+Prepared 2026-11-22
+
+PASSED locally:
+- 6 standalone regression checks: register-company selection; shared fallback;
+  rejection of foreign-company-only sequence; migration preserves identity and
+  counter and is idempotent; unexpected sequence guard; shared XML definition.
+- Syntax compilation of every supplied Python file.
+- Parsing of every supplied XML file with lxml.
+- Node syntax check of every supplied JavaScript file.
+- Comparison against uploaded ZIP: only manifest, booking model, sequence XML and
+  integration test file changed among existing source files. New migration added.
+- Earlier UI fixes retained byte-for-byte; uploaded caches/backups omitted.
+
+NOT EXECUTED here:
+- Real Odoo integration suite (three new regression tests included).
+- Migration against the user's database.
+- Windows PowerShell installer.
+- Reservation creation, deposit validation, final balance and refund workflows.
+
+Standalone checks use the actual helper/migration functions with small ORM mocks;
+these are not evidence of a successful database migration or completed booking.
+The Windows installer verifies installed version and the active shared sequence
+without consuming a reference or creating a reservation/payment.
+
+Primary implementation references reviewed:
+https://github.com/odoo/odoo/blob/20.0/odoo/addons/base/models/ir_sequence.py
+https://www.odoo.com/documentation/19.0/developer/reference/upgrades/upgrade_scripts.html

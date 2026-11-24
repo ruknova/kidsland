@@ -1,0 +1,9 @@
+<odoo noupdate="1">
+    <record id="booking_sequence" model="ir.sequence">
+        <field name="name">Hopland Birthday Booking</field>
+        <field name="code">hopland.birthday.booking</field>
+        <field name="prefix">BDAY/%(year)s/</field>
+        <field name="padding">5</field>
+        <field name="company_id" eval="False"/>
+    </record>
+</odoo>

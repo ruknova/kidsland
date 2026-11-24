@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="activity_party_receipt_review" model="mail.activity.type">
+        <field name="name">Review party purchase receipt</field>
+        <field name="res_model">hopland.party.receipt.review</field>
+        <field name="summary">Goods received — review supplier document</field>
+    </record>
+    <record id="party_receipt_review_list" model="ir.ui.view">
+        <field name="name">hopland.party.receipt.review.list</field>
+        <field name="model">hopland.party.receipt.review</field>
+        <field name="arch" type="xml">
+            <list create="false" delete="false" decoration-success="state == 'reviewed'">
+                <field name="received_at"/><field name="receipt_reference"/>
+                <field name="purchase_reference"/><field name="booking_id" options="{'no_open': True}"/>
+                <field name="company_id"/><field name="supplier_name"/><field name="event"/>
+                <field name="currency_id" column_invisible="True"/>
+                <field name="purchase_total"/><field name="state" widget="badge"/>
+                <field name="activity_ids" widget="list_activity"/>
+            </list>
+        </field>
+    </record>
+    <record id="party_receipt_review_search" model="ir.ui.view">
+        <field name="name">hopland.party.receipt.review.search</field>
+        <field name="model">hopland.party.receipt.review</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/><field name="purchase_reference"/><field name="booking_id"/>
+                <field name="supplier_name"/><field name="company_id"/>
+                <filter name="pending" string="To review" domain="[('state', '=', 'pending')]"/>
+                <filter name="returns" string="Supplier returns" domain="[('event', '=', 'return')]"/>
+                <group><filter name="branch" string="Branch" context="{'group_by':'company_id'}"/></group>
+            </search>
+        </field>
+    </record>
+    <record id="party_receipt_review_form" model="ir.ui.view">
+        <field name="name">hopland.party.receipt.review.form</field>
+        <field name="model">hopland.party.receipt.review</field>
+        <field name="arch" type="xml">
+            <form create="false" delete="false">
+                <header>
+                    <button name="action_mark_reviewed" type="object" string="Mark reviewed" class="btn-primary"
+                            groups="account.group_account_user" invisible="state == 'reviewed'"/>
+                    <button name="action_vendor_bills" type="object" string="Matched bills / credits" groups="account.group_account_user"/>
+                    <field name="state" widget="statusbar" statusbar_visible="pending,reviewed"/>
+                </header>
+                <sheet>
+                    <div class="oe_title"><h1><field name="name"/></h1></div>
+                    <div class="alert alert-info">Review the supplier invoice against this purchase order and received quantities. This task does not create or post a bill or payment. The amount below is the full purchase order total at the time of receipt, including tax; partial receipts are not priced separately.</div>
+                    <group><group>
+                        <field name="company_id"/><field name="booking_id" options="{'no_create': True}"/>
+                        <field name="supplier_name"/><field name="event"/><field name="received_at"/>
+                    </group><group>
+                        <field name="purchase_reference"/><field name="receipt_reference"/>
+                        <field name="currency_id" invisible="1"/><field name="purchase_total"/>
+                        <field name="reviewed_by"/><field name="reviewed_at"/>
+                    </group></group>
+                    <group string="Items in this transfer"><field name="received_items" nolabel="1"/></group>
+                    <group string="Accounting review">
+                        <field name="review_notes" groups="account.group_account_user"/>
+                        <field name="review_notes" groups="!account.group_account_user" readonly="1"/>
+                    </group>
+                </sheet><chatter/>
+            </form>
+        </field>
+    </record>
+    <record id="party_receipt_review_action" model="ir.actions.act_window">
+        <field name="name">Party purchase receipts</field><field name="res_model">hopland.party.receipt.review</field>
+        <field name="view_mode">list,form</field><field name="context">{'search_default_pending': 1}</field>
+    </record>
+    <menuitem id="party_receipt_review_menu" name="Purchase receipts" action="party_receipt_review_action"
+              sequence="36" groups="account.group_account_user"/>
+    <function model="hopland.party.receipt.review" name="_configure_menu_parent"/>
+    <record id="party_booking_receipt_reviews" model="ir.ui.view">
+        <field name="name">hopland.birthday.booking.receipt.reviews</field>
+        <field name="model">hopland.birthday.booking</field>
+        <field name="inherit_id" ref="birthday_booking_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//sheet" position="inside">
+                <group string="Purchase receipt reviews" groups="account.group_account_user,purchase.group_purchase_user">
+                    <field name="receipt_review_ids" nolabel="1">
+                        <list create="false" delete="false" edit="false">
+                            <field name="receipt_reference"/><field name="purchase_reference"/>
+                            <field name="event"/><field name="supplier_name"/><field name="state"/>
+                        </list>
+                    </field>
+                </group>
+            </xpath>
+        </field>
+    </record>
+</odoo>

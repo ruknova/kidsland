@@ -1,0 +1,41 @@
+<odoo>
+    <record id="birthday_config_form" model="ir.ui.view">
+        <field name="name">pos.config.hopland.birthday</field><field name="model">pos.config</field>
+        <field name="inherit_id" ref="point_of_sale.pos_config_view_form"/>
+        <field name="arch" type="xml"><xpath expr="//div[@id='title']" position="after"><group string="Hopland Birthdays"><field name="hopland_birthday_enabled"/><field name="hopland_birthday_timezone" invisible="not hopland_birthday_enabled"/></group></xpath></field>
+    </record>
+    <record id="birthday_package_list" model="ir.ui.view">
+        <field name="name">hopland.birthday.package.list</field><field name="model">hopland.birthday.package</field>
+        <field name="arch" type="xml"><list><field name="sequence" widget="handle"/><field name="name"/><field name="product_id"/><field name="company_id"/><field name="min_children"/><field name="duration_hours"/><field name="minimum_deposit_percent"/></list></field>
+    </record>
+    <record id="birthday_package_form" model="ir.ui.view">
+        <field name="name">hopland.birthday.package.form</field><field name="model">hopland.birthday.package</field>
+        <field name="arch" type="xml"><form><sheet><field name="image_128" widget="image" class="oe_avatar"/><div class="oe_title"><h1><field name="name"/></h1></div><group><group><field name="active"/><field name="company_id"/><field name="product_id"/><field name="min_children"/><field name="max_children"/></group><group><field name="duration_hours"/><field name="minimum_deposit_percent"/><field name="max_discount_percent"/></group></group><notebook><page string="Included services"><p>These are a checklist. Removing an included service does not discount the package.</p><field name="included_service_ids"><list editable="bottom"><field name="sequence" widget="handle"/><field name="name"/></list></field></page><page string="Paid extras"><p>Each selected extra is charged once per reservation. Prices and taxes come from its product.</p><field name="extra_product_ids" widget="many2many_tags"/></page><page string="Terms"><field name="terms"/></page></notebook></sheet></form></field>
+    </record>
+    <record id="birthday_room_list" model="ir.ui.view">
+        <field name="name">hopland.birthday.room.list</field><field name="model">hopland.birthday.room</field><field name="arch" type="xml"><list editable="bottom"><field name="name"/><field name="company_id"/><field name="capacity"/><field name="active"/></list></field>
+    </record>
+    <record id="birthday_booking_list" model="ir.ui.view">
+        <field name="name">hopland.birthday.booking.list</field><field name="model">hopland.birthday.booking</field>
+        <field name="arch" type="xml"><list create="false" edit="false" delete="false" decoration-muted="state == 'cancelled'" decoration-success="state == 'confirmed'"><field name="name"/><field name="child_name"/><field name="partner_id"/><field name="phone"/><field name="start"/><field name="room_id"/><field name="children"/><field name="currency_id" column_invisible="True"/><field name="amount_total"/><field name="amount_paid"/><field name="balance"/><field name="payment_status" widget="badge"/><field name="state" widget="badge"/></list></field>
+    </record>
+    <record id="birthday_booking_calendar" model="ir.ui.view">
+        <field name="name">hopland.birthday.booking.calendar</field><field name="model">hopland.birthday.booking</field>
+        <field name="arch" type="xml"><calendar string="Birthday reservations" date_start="start" date_stop="stop" color="room_id" mode="week" create="false" edit="false" delete="false" quick_create="false"><field name="child_name"/><field name="partner_id"/><field name="room_id" filters="1"/><field name="children"/><field name="state"/><field name="balance"/></calendar></field>
+    </record>
+    <record id="birthday_booking_search" model="ir.ui.view">
+        <field name="name">hopland.birthday.booking.search</field><field name="model">hopland.birthday.booking</field>
+        <field name="arch" type="xml"><search><field name="name"/><field name="child_name"/><field name="partner_id"/><field name="phone"/><filter name="active_bookings" string="Active reservations" domain="[('state', '!=', 'cancelled')]"/><filter name="tentative" string="Tentative" domain="[('state', '=', 'tentative')]"/><group><filter name="room" string="Room" context="{'group_by': 'room_id'}"/><filter name="state" string="Stage" context="{'group_by': 'state'}"/><filter name="branch" string="Branch" context="{'group_by': 'company_id'}"/></group></search></field>
+    </record>
+    <record id="birthday_booking_form" model="ir.ui.view">
+        <field name="name">hopland.birthday.booking.form</field><field name="model">hopland.birthday.booking</field>
+        <field name="arch" type="xml"><form create="false" edit="false" delete="false"><header><button name="action_complete" type="object" string="Complete party" groups="point_of_sale.group_pos_manager" invisible="state != 'confirmed'"/><button name="action_release_checkout" type="object" string="Release abandoned checkout" groups="point_of_sale.group_pos_manager" invisible="not checkout_uuid" confirm="Only continue after checking every POS device for an unsynced payment and removing the unpaid cart. The old checkout cannot be paid after release."/><field name="state" widget="statusbar" statusbar_visible="tentative,confirmed,completed,cancelled"/></header><sheet><div class="oe_title"><h1><field name="name"/></h1><h2><field name="child_name"/></h2></div><group><group string="Guest details"><field name="partner_id"/><field name="phone"/><field name="email"/><field name="child_age"/><field name="children"/><field name="adults"/></group><group string="Reservation"><field name="company_id"/><field name="config_id"/><field name="package_id"/><field name="room_id"/><field name="start"/><field name="stop"/><field name="timezone"/></group></group><group><group string="Payment"><field name="sale_order_id"/><field name="currency_id" invisible="1"/><field name="amount_total"/><field name="minimum_deposit"/><field name="amount_paid"/><field name="balance"/><field name="payment_status"/></group><group string="Services"><field name="included_services"/><field name="extras"/><field name="notes"/></group></group><group string="Open checkout" invisible="not checkout_uuid"><field name="checkout_uuid"/><field name="checkout_amount"/><field name="checkout_mode"/><field name="checkout_user_id"/></group></sheet><chatter/></form></field>
+    </record>
+    <record id="birthday_bookings_action" model="ir.actions.act_window"><field name="name">Birthday Reservations</field><field name="res_model">hopland.birthday.booking</field><field name="view_mode">calendar,list,form</field><field name="context">{'search_default_active_bookings': 1, 'tz': 'Asia/Riyadh'}</field></record>
+    <record id="birthday_packages_action" model="ir.actions.act_window"><field name="name">Birthday Packages</field><field name="res_model">hopland.birthday.package</field><field name="view_mode">list,form</field></record>
+    <record id="birthday_rooms_action" model="ir.actions.act_window"><field name="name">Party Rooms</field><field name="res_model">hopland.birthday.room</field><field name="view_mode">list,form</field></record>
+    <menuitem id="birthday_root" name="Birthdays" parent="point_of_sale.menu_point_root" sequence="15" groups="point_of_sale.group_pos_user"/>
+    <menuitem id="birthday_bookings_menu" name="Reservations &amp; Calendar" parent="birthday_root" action="birthday_bookings_action" sequence="10"/>
+    <menuitem id="birthday_packages_menu" name="Packages" parent="birthday_root" action="birthday_packages_action" sequence="20" groups="point_of_sale.group_pos_manager"/>
+    <menuitem id="birthday_rooms_menu" name="Party Rooms" parent="birthday_root" action="birthday_rooms_action" sequence="30" groups="point_of_sale.group_pos_manager"/>
+</odoo>
