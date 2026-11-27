@@ -114,6 +114,7 @@ class PartyPreparation(models.Model):
     stop = fields.Datetime(related='booking_id.stop')
     timezone = fields.Char(related='booking_id.timezone')
     room_id = fields.Many2one(related='booking_id.room_id')
+    additional_room_ids = fields.Many2many(related='booking_id.additional_room_ids')
     children = fields.Integer(related='booking_id.children')
     adults = fields.Integer(related='booking_id.adults')
     included_services = fields.Text(related='booking_id.included_services')

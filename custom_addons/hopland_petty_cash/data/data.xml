@@ -1,0 +1,14 @@
+<odoo noupdate="1">
+    <record id="sequence_payment" model="ir.sequence">
+        <field name="name">Petty cash payment</field>
+        <field name="code">hopland.petty.cash.payment</field>
+        <field name="prefix">PC/%(year)s/</field>
+        <field name="padding">5</field>
+        <field name="company_id" eval="False"/>
+    </record>
+    <record id="activity_review" model="mail.activity.type">
+        <field name="name">Review petty cash payment</field>
+        <field name="res_model">hopland.petty.cash.payment</field>
+        <field name="summary">Check vendor receipt and posted petty cash payment</field>
+    </record>
+</odoo>

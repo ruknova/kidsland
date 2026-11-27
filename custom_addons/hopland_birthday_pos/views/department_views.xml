@@ -16,6 +16,7 @@
                         <field name="package_id" domain="[('company_id', '=', company_id)]" options="{'no_create': True}"/>
                         <field name="event_kind"/>
                         <field name="room_id" domain="[('company_id', '=', company_id)]" options="{'no_create': True}"/>
+                        <field name="additional_room_ids" widget="many2many_tags" domain="[('company_id', '=', company_id), ('id', '!=', room_id)]" options="{'no_create': True}"/>
                         <field name="start"/><field name="stop"/><field name="booking_timezone"/>
                         <div class="text-muted" colspan="2">Date fields use your Odoo user timezone. End time follows the package duration.</div>
                     </group>
@@ -92,7 +93,7 @@
                 <sheet>
                     <div class="alert alert-warning" invisible="not on_hold">Preparation is on hold: the reservation no longer meets its deposit requirement. Review before committing purchases.</div>
                     <div class="oe_title"><h1><field name="name"/></h1><h2><field name="child_name"/></h2></div>
-                    <group><group><field name="booking_id"/><field name="company_id"/><field name="event_kind"/><field name="room_id"/><field name="start"/><field name="stop"/><field name="timezone"/></group>
+                    <group><group><field name="booking_id"/><field name="company_id"/><field name="event_kind"/><field name="room_id"/><field name="additional_room_ids" widget="many2many_tags"/><field name="start"/><field name="stop"/><field name="timezone"/></group>
                     <group><field name="children"/><field name="adults"/><field name="on_hold"/>
                         <field name="state" groups="purchase.group_purchase_user" readonly="on_hold"/>
                         <field name="state" groups="!purchase.group_purchase_user" readonly="1"/>

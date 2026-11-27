@@ -1,0 +1,7 @@
+id,name,model_id,group_id/id,operation,domain
+fund_company,Fund company boundary,hopland.petty.cash.fund,,crud,"[('company_id', 'in', company_ids)]"
+fund_accounting,Accounting funds,hopland.petty.cash.fund,account.group_account_user,crud,
+fund_purchasing,Assigned purchasing funds,hopland.petty.cash.fund,purchase.group_purchase_user,r,"['|', ('user_ids', 'in', [user.id]), ('custodian_id', '=', user.id)]"
+payment_company,Payment company boundary,hopland.petty.cash.payment,,crud,"[('company_id', 'in', company_ids)]"
+payment_accounting,Accounting payment review,hopland.petty.cash.payment,account.group_account_user,ru,
+payment_purchasing,Assigned purchasing payments,hopland.petty.cash.payment,purchase.group_purchase_user,crud,"['|', ('fund_id.user_ids', 'in', [user.id]), ('fund_id.custodian_id', '=', user.id)]"

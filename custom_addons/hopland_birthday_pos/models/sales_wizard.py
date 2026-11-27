@@ -15,6 +15,7 @@ class SalesPartyWizard(models.TransientModel):
     company_id = fields.Many2one('res.company', string='Branch', required=True, default=lambda self: self.env.company)
     config_id = fields.Many2one('pos.config', string='Reception register', required=True, check_company=True)
     package_id = fields.Many2one('hopland.birthday.package', required=True, check_company=True)
+    additional_room_ids = fields.Many2many('hopland.birthday.room', string='Additional rooms', check_company=True)
     room_id = fields.Many2one('hopland.birthday.room', required=True, check_company=True)
     event_kind = fields.Selection([('birthday', 'Birthday'), ('special', 'Special party')], default='birthday', required=True)
     child_name = fields.Char(string='Child / event name', required=True)
@@ -48,6 +49,11 @@ class SalesPartyWizard(models.TransientModel):
         self.config_id = False
         self.package_id = False
         self.room_id = False
+        self.additional_room_ids = False
+
+    @api.onchange('room_id')
+    def _onchange_primary_room(self):
+        self.additional_room_ids -= self.room_id
 
     @api.onchange('config_id', 'package_id', 'partner_id', 'children', 'discount', 'extra_ids', 'company_id')
     def _invalidate_quote(self):
@@ -76,7 +82,7 @@ class SalesPartyWizard(models.TransientModel):
         def local(value):
             return value.replace(tzinfo=timezone.utc).astimezone(zone).strftime('%Y-%m-%dT%H:%M:%S') if value else ''
         return {'request_uuid': self.request_uuid, 'package_id': self.package_id.id,
-                'room_id': self.room_id.id, 'partner_id': self.partner_id.id,
+                'room_id': self.room_id.id, 'additional_room_ids': self.additional_room_ids.ids, 'partner_id': self.partner_id.id,
                 'parent_name': self.parent_name, 'phone': self.phone, 'email': self.email or '',
                 'child_name': self.child_name, 'age': self.child_age,
                 'children': self.children, 'adults': self.adults,

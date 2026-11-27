@@ -51,6 +51,15 @@
                                 <h3><span class="hb-step">3</span> Pick their party time</h3>
                                 <div class="hb-grid">
                                     <label class="hb-wide">Party room <span>*</span><select t-att-value="this.state.roomId" t-on-change="(e) => this.input('roomId', e)"><option value="0">Select a room</option><option t-foreach="this.state.catalog.rooms" t-as="room" t-key="room.id" t-att-value="room.id" t-att-selected="room.id === (+this.state.roomId)"><t t-out="room.name"/> · up to <t t-out="room.capacity"/> children</option></select></label>
+                                    <div class="hb-wide" t-if="this.state.catalog.rooms.length > 1">
+                                        <span>Additional rooms (optional)</span>
+                                        <t t-foreach="this.state.catalog.rooms" t-as="room" t-key="room.id">
+                                            <label t-if="room.id !== (+this.state.roomId)">
+                                                <input type="checkbox" t-att-checked="this.state.additionalRoomIds.includes(room.id)" t-on-change="(e) => this.toggleRoom(room.id, e.target.checked)"/>
+                                                <t t-out="room.name"/>
+                                            </label>
+                                        </t>
+                                    </div>
                                     <label>Party start <span>*</span><input type="datetime-local" t-att-value="this.state.start" t-on-input="(e) => this.input('start', e)"/></label>
                                     <label>Party end<input type="datetime-local" t-att-value="this.state.stop" readonly="readonly"/></label>
                                 </div>

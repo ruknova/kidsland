@@ -19,6 +19,7 @@ class BirthdayBooking(models.Model):
     company_id = fields.Many2one('res.company', required=True, readonly=True)
     config_id = fields.Many2one('pos.config', required=True, readonly=True, check_company=True)
     package_id = fields.Many2one('hopland.birthday.package', required=True, readonly=True, check_company=True)
+    additional_room_ids = fields.Many2many('hopland.birthday.room', string='Additional rooms', check_company=True, readonly=True, copy=False)
     room_id = fields.Many2one('hopland.birthday.room', required=True, readonly=True, check_company=True)
     partner_id = fields.Many2one('res.partner', required=True, readonly=True, check_company=True)
     phone = fields.Char(required=True, readonly=True)
@@ -240,18 +241,27 @@ class BirthdayBooking(models.Model):
             ('id', '=', int(payload.get('room_id') or 0)), ('company_id', '=', config.company_id.id)], limit=1)
         if not room:
             raise UserError(_('Select an available party room.'))
+        selected = payload.get('additional_room_ids', [])
+        if not isinstance(selected, list) or any(type(value) is not int or value <= 0 for value in selected):
+            raise UserError(_('Select valid additional rooms.'))
+        room_ids = sorted(set(selected) | {room.id})
+        rooms = self.env['hopland.birthday.room'].search([
+            ('id', 'in', room_ids), ('active', '=', True), ('company_id', '=', config.company_id.id)], order='id')
+        if rooms.ids != room_ids:
+            raise UserError(_('Select active rooms from the reservation branch.'))
         # Update the room guard, rather than merely locking it. Under PostgreSQL's
         # repeatable-read isolation, a competing reservation must retry with a fresh
         # snapshot to see the first booking before checking for overlapping slots.
-        self.env.cr.execute('UPDATE hopland_birthday_room SET reservation_lock_version = COALESCE(reservation_lock_version, 0) + 1 WHERE id = %s', [room.id])
-        room.invalidate_recordset(['reservation_lock_version'])
-        if self.sudo().search_count([('room_id', '=', room.id), ('state', '!=', 'cancelled'),
+        for selected_room in rooms:
+            self.env.cr.execute('UPDATE hopland_birthday_room SET reservation_lock_version = COALESCE(reservation_lock_version, 0) + 1 WHERE id = %s', [selected_room.id])
+        rooms.invalidate_recordset(['reservation_lock_version'])
+        if self.sudo().search_count(['|', ('room_id', 'in', room_ids), ('additional_room_ids', 'in', room_ids), ('state', '!=', 'cancelled'),
                                     ('start', '<', fields.Datetime.to_string(stop)), ('stop', '>', fields.Datetime.to_string(start))]):
-            raise UserError(_('This room already has a reservation at that time. Choose another time or room.'))
+            raise UserError(_('A selected room already has a reservation at that time. Choose another time or room.'))
         partner = self._partner(config, payload, create=True)
         quotation, vals, children, extras, services = self._quotation(config, package, payload, partner)
-        if children > room.capacity:
-            raise UserError(_('This room holds at most %s children.', room.capacity))
+        if children > min(rooms.mapped('capacity')):
+            raise UserError(_('For a group visiting each selected room, the smallest room holds %s children.', min(rooms.mapped('capacity'))))
         try:
             shown_total = number(payload.get('expected_total'), 'Displayed total', 0.01)
         except ValueError as exc:
@@ -262,7 +272,7 @@ class BirthdayBooking(models.Model):
         notes = str(payload.get('notes', '')).strip()[:2000]
         selected_names = '\n'.join(services.mapped('name'))
         detail = (f'{reference} | {child}, age {age}\n'
-                  f'{payload["start"]} – {payload["stop"]} ({timezone}) | {room.name}\n'
+                  f'{payload["start"]} – {payload["stop"]} ({timezone}) | {", ".join(rooms.mapped("name"))}\n'
                   f'{children} children, {adults} adults | Contact: {phone}\n'
                   f'Selected included services:\n{selected_names}\nNotes: {notes}')
         vals.update({'origin': reference, 'client_order_ref': reference,
@@ -276,7 +286,7 @@ class BirthdayBooking(models.Model):
             'source': source, 'salesperson_id': self.env.uid,
             'event_kind': payload.get('event_kind', 'birthday'),
             'name': reference, 'request_uuid': request, 'company_id': config.company_id.id, 'config_id': config.id,
-            'package_id': package.id, 'room_id': room.id, 'partner_id': partner.id, 'phone': phone,
+            'package_id': package.id, 'room_id': room.id, 'additional_room_ids': [Command.set((rooms - room).ids)], 'partner_id': partner.id, 'phone': phone,
             'email': str(payload.get('email', '')).strip()[:150], 'child_name': child, 'child_age': age,
             'children': children, 'adults': adults, 'start': start, 'stop': stop, 'timezone': timezone,
             'included_services': selected_names, 'extras': '\n'.join(extras.mapped('name')),
@@ -291,7 +301,7 @@ class BirthdayBooking(models.Model):
         self.ensure_one()
         self.invalidate_recordset(['amount_paid', 'balance', 'payment_status'])
         return {'id': self.id, 'reference': self.name, 'child': self.child_name,
-                'parent': self.partner_id.name, 'phone': self.phone, 'room': self.room_id.name,
+                'parent': self.partner_id.name, 'phone': self.phone, 'room': ', '.join((self.room_id | self.additional_room_ids).mapped('name')),
                 'start': fields.Datetime.to_string(self.start), 'stop': fields.Datetime.to_string(self.stop),
                 'timezone': self.timezone, 'children': self.children, 'state': self.state,
                 'total': self.amount_total, 'paid': self.amount_paid, 'balance': self.balance,

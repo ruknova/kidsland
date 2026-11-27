@@ -1,0 +1,126 @@
+<odoo>
+    <record id="fund_list" model="ir.ui.view">
+        <field name="name">hopland.petty.cash.fund.list</field><field name="model">hopland.petty.cash.fund</field>
+        <field name="arch" type="xml">
+            <list><field name="name"/><field name="company_id"/><field name="department"/>
+                <field name="custodian_id"/><field name="currency_id" column_invisible="True"/>
+                <field name="approved_float"/><field name="available_balance"/>
+            </list>
+        </field>
+    </record>
+    <record id="fund_form" model="ir.ui.view">
+        <field name="name">hopland.petty.cash.fund.form</field><field name="model">hopland.petty.cash.fund</field>
+        <field name="arch" type="xml">
+            <form><sheet>
+                <div class="oe_title"><h1><field name="name" placeholder="Al Yasmin — Purchasing Petty Cash"/></h1></div>
+                <group><group>
+                    <field name="active" invisible="1"/><field name="company_id"/><field name="currency_id" invisible="1"/>
+                    <field name="department"/><field name="custodian_id"/>
+                    <field name="user_ids" widget="many2many_tags"/><field name="reviewer_id"/>
+                </group><group>
+                    <field name="approved_float"/><field name="per_payment_limit"/><field name="available_balance"/>
+                </group></group>
+                <group string="Posting configuration" groups="account.group_account_user">
+                    <field name="journal_id" options="{'no_create': True}"/>
+                    <field name="cash_account_id"/>
+                    <field name="bill_journal_id" options="{'no_create': True}"/>
+                    <field name="expense_account_id" options="{'no_create': True}"/>
+                    <field name="allowed_tax_ids" widget="many2many_tags" options="{'no_create': True}"/>
+                </group>
+                <div class="alert alert-info">The balance comes from posted cash-account entries. The approved float is a policy amount, not funding. Accounting records replenishments or extra funds separately. This fund is in company currency.</div>
+            </sheet><chatter/></form>
+        </field>
+    </record>
+    <record id="payment_list" model="ir.ui.view">
+        <field name="name">hopland.petty.cash.payment.list</field><field name="model">hopland.petty.cash.payment</field>
+        <field name="arch" type="xml">
+            <list decoration-success="state == 'reviewed'" decoration-info="state == 'draft'">
+                <field name="name"/><field name="date"/><field name="fund_id"/><field name="partner_id"/>
+                <field name="vendor_reference"/><field name="currency_id" column_invisible="True"/>
+                <field name="amount" sum="Total"/><field name="posted_by"/><field name="state" widget="badge"/>
+                <field name="activity_ids" widget="list_activity"/>
+            </list>
+        </field>
+    </record>
+    <record id="payment_search" model="ir.ui.view">
+        <field name="name">hopland.petty.cash.payment.search</field><field name="model">hopland.petty.cash.payment</field>
+        <field name="arch" type="xml">
+            <search><field name="name"/><field name="fund_id"/><field name="partner_id"/><field name="vendor_reference"/>
+                <filter name="to_review" string="To review" domain="[('state', '=', 'paid')]"/>
+                <filter name="draft" string="Draft" domain="[('state', '=', 'draft')]"/>
+                <filter name="mine" string="Created by me" domain="[('requested_by', '=', uid)]"/>
+                <group><filter name="department" string="Fund / department" context="{'group_by':'fund_id'}"/>
+                    <filter name="company" string="Company" context="{'group_by':'company_id'}"/></group>
+            </search>
+        </field>
+    </record>
+    <record id="payment_form" model="ir.ui.view">
+        <field name="name">hopland.petty.cash.payment.form</field><field name="model">hopland.petty.cash.payment</field>
+        <field name="arch" type="xml">
+            <form><header>
+                <button name="action_confirm" type="object" string="Confirm petty-cash payment" class="btn-primary"
+                        groups="purchase.group_purchase_user" invisible="state != 'draft'"
+                        confirm="Confirm that you paid the vendor from this petty cash fund. This posts the bill and cash payment."/>
+                <button name="action_review" type="object" string="Mark reviewed" groups="account.group_account_user"
+                        invisible="state != 'paid'"/>
+                <field name="state" widget="statusbar" statusbar_visible="draft,paid,reviewed"/>
+            </header><sheet>
+                <div class="oe_button_box" name="button_box" groups="account.group_account_user">
+                    <button name="action_open_bill" type="object" string="Vendor bill" icon="fa-file-text-o" invisible="not bill_id"/>
+                    <button name="action_open_payment" type="object" string="Payment" icon="fa-money" invisible="not payment_id"/>
+                </div>
+                <div class="oe_title"><h1><field name="name"/></h1></div>
+                <field name="bill_id" invisible="1" groups="account.group_account_user"/>
+                <field name="payment_id" invisible="1" groups="account.group_account_user"/>
+                <group><group>
+                    <field name="fund_id" readonly="state != 'draft'" options="{'no_create': True}"/>
+                    <field name="company_id"/><field name="currency_id" invisible="1"/>
+                    <field name="available_balance"/>
+                    <field name="partner_id" readonly="state != 'draft'" options="{'no_create': True}"/>
+                    <field name="vendor_reference" readonly="state != 'draft'"/>
+                    <field name="purpose" readonly="state != 'draft'"/>
+                </group><group>
+                    <field name="date" readonly="state != 'draft'"/><field name="invoice_date" readonly="state != 'draft'"/>
+                    <field name="source" readonly="state != 'draft'"/>
+                    <field name="purchase_id" invisible="source != 'purchase'" required="source == 'purchase'" readonly="state != 'draft'" options="{'no_create': True}"/>
+                    <field name="bill_number" invisible="source != 'bill'" required="source == 'bill'" readonly="state != 'draft'"/>
+                    <field name="allowed_tax_ids" invisible="1"/>
+                    <field name="net_amount" invisible="source != 'expense'" readonly="state != 'draft'"/>
+                    <field name="tax_ids" widget="many2many_tags" invisible="source != 'expense'" readonly="state != 'draft'" options="{'no_create': True}"/>
+                    <field name="amount" readonly="state != 'draft'"/>
+                </group></group>
+                <group string="Vendor receipt — required to confirm">
+                    <field name="receipt_filename" invisible="1"/>
+                    <field name="receipt" filename="receipt_filename" readonly="state != 'draft'"/>
+                </group>
+                <div class="alert alert-info" invisible="source != 'expense'">Use direct expense for purchases without a PO, such as small consumables. Stock purchases use their purchase order. Enter the amount before tax and the total actually paid. The vendor reference must be unique.</div>
+                <group string="Accounting trace" invisible="state == 'draft'">
+                    <field name="bill_display"/><field name="payment_display"/><field name="posted_by"/><field name="posted_at"/>
+                    <field name="reviewed_by"/><field name="reviewed_at"/>
+                    <field name="review_notes" groups="account.group_account_user"/>
+                    <field name="review_notes" groups="!account.group_account_user" readonly="1"/>
+                </group>
+            </sheet><chatter/></form>
+        </field>
+    </record>
+    <record id="action_payments" model="ir.actions.act_window">
+        <field name="name">Petty cash payments</field><field name="res_model">hopland.petty.cash.payment</field>
+        <field name="view_mode">list,form</field>
+    </record>
+    <record id="action_review" model="ir.actions.act_window">
+        <field name="name">Petty cash review</field><field name="res_model">hopland.petty.cash.payment</field>
+        <field name="view_mode">list,form</field><field name="context">{'search_default_to_review': 1}</field>
+    </record>
+    <record id="action_funds" model="ir.actions.act_window">
+        <field name="name">Department petty cash funds</field><field name="res_model">hopland.petty.cash.fund</field>
+        <field name="view_mode">list,form</field>
+    </record>
+    <menuitem id="menu_purchase" name="Petty Cash" parent="purchase.menu_purchase_root" sequence="25" groups="purchase.group_purchase_user"/>
+    <menuitem id="menu_purchase_payments" name="Payments" parent="menu_purchase" action="action_payments" sequence="10"/>
+    <menuitem id="menu_purchase_funds" name="My funds" parent="menu_purchase" action="action_funds" sequence="20"/>
+    <menuitem id="menu_accounting" name="Petty Cash" sequence="37" groups="account.group_account_user"/>
+    <menuitem id="menu_review" name="Review payments" parent="menu_accounting" action="action_review" sequence="10"/>
+    <menuitem id="menu_all_payments" name="All payments" parent="menu_accounting" action="action_payments" sequence="20"/>
+    <menuitem id="menu_funds" name="Department funds" parent="menu_accounting" action="action_funds" sequence="30"/>
+    <function model="hopland.petty.cash.payment" name="_configure_menu"/>
+</odoo>

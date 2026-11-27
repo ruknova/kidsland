@@ -20,7 +20,7 @@ export class BirthdayDialog extends Component {
         this.state = proxy({
             loading: true, busy: false, pricing: false, tab: 'new', error: '', priceError: '',
             catalog: { packages: [], rooms: [], timezone: 'Asia/Riyadh', branch: '' },
-            packageId: 0, roomId: 0, partnerId: partner?.id || 0,
+            packageId: 0, roomId: 0, additionalRoomIds: [], partnerId: partner?.id || 0,
             parent: partner?.name || '', phone: partner?.phone || '', email: partner?.email || '',
             child: '', age: 0, children: 10, adults: 0, start: '', stop: '', notes: '',
             discount: 0, services: {}, extras: {}, customers: [], quote: null, optionPrices: {},
@@ -96,7 +96,12 @@ export class BirthdayDialog extends Component {
         const start = DateTime.fromISO(this.state.start, { zone: this.state.catalog.timezone });
         this.state.stop = start.isValid ? start.plus({ hours: this.selectedPackage?.duration || 2 }).toFormat("yyyy-MM-dd'T'HH:mm") : '';
     }
+    toggleRoom(roomId, checked) {
+        this.state.additionalRoomIds = this.state.additionalRoomIds.filter(id => id !== roomId);
+        if (checked) this.state.additionalRoomIds.push(roomId);
+    }
     input(field, event, price = false) {
+        if (field === 'roomId') this.toggleRoom(Number(event.target.value), false);
         this.state[field] = event.target.value;
         if (field === 'start') this.updateStop();
         if (field === 'parent' && !this.state.partnerId) this.searchCustomers();
@@ -142,7 +147,7 @@ export class BirthdayDialog extends Component {
     }
     payload() {
         return {
-            request_uuid: this.state.requestUuid, package_id: Number(this.state.packageId), room_id: Number(this.state.roomId),
+            request_uuid: this.state.requestUuid, package_id: Number(this.state.packageId), room_id: Number(this.state.roomId), additional_room_ids: this.state.additionalRoomIds,
             partner_id: this.state.partnerId || false, parent_name: this.state.parent,
             phone: this.state.phone, email: this.state.email, child_name: this.state.child,
             age: Number(this.state.age), children: Number(this.state.children), adults: Number(this.state.adults),
